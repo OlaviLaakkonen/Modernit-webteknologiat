@@ -1,0 +1,8 @@
+{
+  "name": "varausloki",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "analysoi": "node analysoi.js varausloki.log --json raportti.json"
+  }
+}

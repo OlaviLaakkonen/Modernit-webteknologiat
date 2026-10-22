@@ -1,0 +1,55 @@
+{
+  "tilat": {
+    "A101": {
+      "varaukset": 4,
+      "peruutukset": 1,
+      "hylatyt": 2,
+      "minuutit": 240
+    },
+    "B201": {
+      "varaukset": 3,
+      "peruutukset": 1,
+      "hylatyt": 2,
+      "minuutit": 120
+    },
+    "A102": {
+      "varaukset": 4,
+      "peruutukset": 1,
+      "hylatyt": 1,
+      "minuutit": 270
+    },
+    "AULA": {
+      "varaukset": 2,
+      "peruutukset": 0,
+      "hylatyt": 1,
+      "minuutit": 180
+    },
+    "X999": {
+      "varaukset": 1,
+      "peruutukset": 0,
+      "hylatyt": 0,
+      "minuutit": 60
+    }
+  },
+  "hylkaysten_syyt": {
+    "paallekkain": 3,
+    "aukioloaika": 3
+  },
+  "aktiivisimmat": [
+    {
+      "nimi": "aalto",
+      "maara": 4
+    },
+    {
+      "nimi": "kettu",
+      "maara": 3
+    },
+    {
+      "nimi": "korhonen",
+      "maara": 2
+    }
+  ],
+  "virheelliset_rivit": [
+    14
+  ]
+}
