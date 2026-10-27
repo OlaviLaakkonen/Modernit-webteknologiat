@@ -1,0 +1,67 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { luoSovellus } from '../src/app.js';
+import { onPaallekkain } from '../src/varaukset.js';
+
+async function kaynnista() {
+  const dir = await mkdtemp(join(tmpdir(), 'varaus-'));
+  const palvelin = luoSovellus({ tiedosto: join(dir, 'v.json') });
+  await new Promise((r) => palvelin.listen(0, r));
+  return {
+    base: `http://127.0.0.1:${palvelin.address().port}`,
+    sulje: () => { palvelin.closeAllConnections(); return new Promise((r) => palvelin.close(r)); },
+  };
+}
+const post = (body) => ({ method: 'POST', headers: { 'content-type': 'application/json' }, body: typeof body === 'string' ? body : JSON.stringify(body) });
+const varaus = (alku, loppu, tila = 'huone-a') => ({ tila, nimi: 'Testi', alku, loppu });
+
+test('onPaallekkain: peräkkäiset eivät ole päällekkäin', () => {
+  const a = { alku: '2026-11-02T09:00:00Z', loppu: '2026-11-02T10:00:00Z' };
+  assert.equal(onPaallekkain(a, { alku: '2026-11-02T10:00:00Z', loppu: '2026-11-02T11:00:00Z' }), false);
+  assert.equal(onPaallekkain(a, { alku: '2026-11-02T09:30:00Z', loppu: '2026-11-02T11:00:00Z' }), true);
+});
+
+test('API: luonti, 409, 400, 404, poisto', async () => {
+  const { base, sulje } = await kaynnista();
+  try {
+    assert.equal((await (await fetch(`${base}/api/tilat`)).json()).length, 2);
+
+    const r1 = await fetch(`${base}/api/varaukset`, post(varaus('2026-11-02T09:00:00Z', '2026-11-02T10:00:00Z')));
+    assert.equal(r1.status, 201);
+    const luotu = await r1.json();
+
+    const r2 = await fetch(`${base}/api/varaukset`, post(varaus('2026-11-02T09:30:00Z', '2026-11-02T10:30:00Z')));
+    assert.equal(r2.status, 409);
+    assert.deepEqual((await r2.json()).paallekkaiset, [luotu.id]);
+
+    // sama aika toisessa tilassa ja heti perään samassa tilassa onnistuvat
+    assert.equal((await fetch(`${base}/api/varaukset`, post(varaus('2026-11-02T09:30:00Z', '2026-11-02T10:30:00Z', 'huone-b')))).status, 201);
+    assert.equal((await fetch(`${base}/api/varaukset`, post(varaus('2026-11-02T10:00:00Z', '2026-11-02T11:00:00Z')))).status, 201);
+
+    assert.equal((await fetch(`${base}/api/varaukset`, post(varaus('2026-11-02T11:00:00Z', '2026-11-02T10:00:00Z')))).status, 400);
+    assert.equal((await fetch(`${base}/api/varaukset`, post('{rikki'))).status, 400);
+
+    assert.equal((await fetch(`${base}/api/varaukset/ei-ole`, { method: 'DELETE' })).status, 404);
+    assert.equal((await fetch(`${base}/api/ei-ole`)).status, 404);
+    assert.equal((await fetch(`${base}/api/varaukset/${luotu.id}`, { method: 'DELETE' })).status, 204);
+    assert.equal((await (await fetch(`${base}/api/varaukset`)).json()).length, 2);
+  } finally {
+    await sulje();
+  }
+});
+
+test('rinnakkaiset samat varaukset: vain yksi onnistuu', async () => {
+  const { base, sulje } = await kaynnista();
+  try {
+    const tulokset = await Promise.all(
+      Array.from({ length: 10 }, () =>
+        fetch(`${base}/api/varaukset`, post(varaus('2026-11-03T09:00:00Z', '2026-11-03T10:00:00Z'))).then((r) => r.status)));
+    assert.equal(tulokset.filter((s) => s === 201).length, 1);
+    assert.equal(tulokset.filter((s) => s === 409).length, 9);
+  } finally {
+    await sulje();
+  }
+});
