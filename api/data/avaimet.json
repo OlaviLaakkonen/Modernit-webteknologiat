@@ -1,0 +1,20 @@
+[
+  {
+    "avain": "abc123",
+    "kayttajatunnus": "matti",
+    "nimi": "Matti Meikäläinen",
+    "rooli": "kayttaja"
+  },
+  {
+    "avain": "def456",
+    "kayttajatunnus": "liisa",
+    "nimi": "Liisa Esimerkki",
+    "rooli": "kayttaja"
+  },
+  {
+    "avain": "xyz789",
+    "kayttajatunnus": "admin",
+    "nimi": "Ylläpitäjä",
+    "rooli": "yllapitaja"
+  }
+]
