@@ -1,0 +1,15 @@
+### Varaus, jonka aiheessa on HTML-koodia 
+POST http://localhost:3000/api/varaukset
+Content-Type: application/json
+X-API-Avain: opiskelija-91c2
+
+{
+  "tila": "A102",
+  "alku": "2026-10-20T09:00",
+  "loppu": "2026-10-20T10:00",
+  "varaaja": "Testi Testaaja",
+  "aihe": ""
+}
+
+### Testivarauksen poisto (vaihda id omaasi)
+DELETE http://localhost:3000/api/varaukset/d43571dc-15fa-4ef6-88f8-ae271f3ea1cb

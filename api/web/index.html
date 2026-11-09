@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="fi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Varausnakyma</title>
+  </head>
+  <body>
+    <main>
+      <h1 id="otsikko"></h1>
+      <p class="tila" id="tila"></p>
+
+      <div class="valinnat">
+        <label>Tila <select id="tilavalinta"></select></label>
+        <label>Paiva <input type="date" id="paiva" value="2026-10-20" /></label>
+      </div>
+
+      <p id="viesti" role="status"></p>
+      <ul id="varaukset"></ul>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

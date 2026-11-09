@@ -1,24 +1,17 @@
-export function vaadiAvain(avaimet) {
-  return (req, res, next) => {
-    const annettu = req.get('X-API-Avain');
-    const kayttaja = avaimet.find((a) => a.avain === annettu);
+export function luoTunnistus(avaimet) {
+  const avaimella = new Map(avaimet.map((a) => [a.avain, a]));
 
-    if (!annettu || !kayttaja) {
-      const virhe = new Error('Avain puuttuu tai on virheellinen');
-      virhe.status = 401;
-      return next(virhe);
+  /** Vaatii kelvollisen avaimen ja tallentaa kayttajan req.kayttaja-kenttaan. */
+  function vaadiAvain(req, res, next) {
+    const kayttaja = avaimella.get(req.get('X-API-Avain') ?? '');
+
+    if (!kayttaja) {
+      return res.status(401).json({ virhe: 'API-avain puuttuu tai ei kelpaa.' });
     }
 
-    app.use((virhe, req, res, next) => {
-        const status = virhe.status ?? 500;
-        res.status(status).json({ virhe: virhe.message });
-    });
-
-    req.kayttaja = {
-      kayttajatunnus: kayttaja.kayttajatunnus,
-      nimi: kayttaja.nimi,
-      rooli: kayttaja.rooli,
-    };
+    req.kayttaja = kayttaja;
     next();
-  };
+  }
+
+  return { vaadiAvain };
 }

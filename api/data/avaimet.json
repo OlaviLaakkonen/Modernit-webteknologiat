@@ -1,20 +1,7 @@
-[
-  {
-    "avain": "abc123",
-    "kayttajatunnus": "matti",
-    "nimi": "Matti Meikäläinen",
-    "rooli": "kayttaja"
-  },
-  {
-    "avain": "def456",
-    "kayttajatunnus": "liisa",
-    "nimi": "Liisa Esimerkki",
-    "rooli": "kayttaja"
-  },
-  {
-    "avain": "xyz789",
-    "kayttajatunnus": "admin",
-    "nimi": "Ylläpitäjä",
-    "rooli": "yllapitaja"
-  }
-]
+{
+  "avaimet": [
+    { "avain": "opettaja-7f3a", "kayttaja": "aalto", "nimi": "Opettaja Aalto", "rooli": "yllapitaja" },
+    { "avain": "opiskelija-91c2", "kayttaja": "kettu", "nimi": "Kaisa Kettu", "rooli": "kayttaja" },
+    { "avain": "opiskelija-44be", "kayttaja": "virtanen", "nimi": "Ville Virtanen", "rooli": "kayttaja" }
+  ]
+}

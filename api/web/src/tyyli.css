@@ -1,0 +1,45 @@
+:root {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1d2430;
+  background: #f4f6f9;
+}
+
+main {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 0 16px;
+}
+
+.tila {
+  font-size: 13px;
+  color: #5b6472;
+}
+
+.valinnat {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.valinnat label {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+#varaukset {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+#varaukset li {
+  background: #fff;
+  border: 1px solid #d6dbe3;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: pre;
+}

@@ -1,139 +1,111 @@
-import http from 'node:http';
+/**
+ * Tilavarausrajapinta.
+ *
+ * Sovellus luodaan funktiolla, joka saa datatiedoston polun. Nain testit
+ * voivat kayttaa omaa tilapaista tiedostoaan, eika oikeaan dataan kosketa.
+ */
+
+import express from 'express';
 import { randomUUID } from 'node:crypto';
 import { luoTallennus } from './tallennus.js';
-import { validoiVaraus, paallekkaiset } from './varaukset.js';
+import { paallekkaiset, validoiVaraus } from './varaukset.js';
 
-export const TILAT = [
-  { id: 'huone-a', nimi: 'Neuvotteluhuone A' },
-  { id: 'huone-b', nimi: 'Neuvotteluhuone B' },
-];
-
-const RUNKO_RAJA = 100_000;
-
+/** Virhe, joka tietaa oman HTTP-tilakoodinsa. */
 class HttpVirhe extends Error {
-  constructor(tila, viesti, lisatiedot = {}) {
+  constructor(tila, viesti, lisat = {}) {
     super(viesti);
     this.tila = tila;
-    this.lisatiedot = lisatiedot;
+    this.lisat = lisat;
   }
 }
 
-function laheta(res, tila, data) {
-  if (data === undefined) {
-    res.writeHead(tila).end();
-    return;
-  }
-  res.writeHead(tila, { 'content-type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify(data));
-}
-
-async function lueJson(req) {
-  let koko = 0;
-  const osat = [];
-  for await (const osa of req) {
-    koko += osa.length;
-    if (koko > RUNKO_RAJA) throw new HttpVirhe(400, 'Pyyntö on liian suuri');
-    osat.push(osa);
-  }
-  try {
-    return JSON.parse(Buffer.concat(osat).toString('utf8'));
-  } catch {
-    throw new HttpVirhe(400, 'Pyynnön runko ei ole kelvollista JSONia');
-  }
-}
-
-export function luoSovellus({ tiedosto, avaimet = [] }) {
+export function luoSovellus({ tiedosto }) {
   const tallennus = luoTallennus(tiedosto);
+  const app = express();
 
-  // Tunnistus: palauttaa käyttäjän tai heittää 401. Kutsutaan vain
-  // niillä reiteillä, jotka vaativat avaimen.
-  function tunnista(req) {
-    const annettu = req.headers['x-api-avain'];
-    const avain = avaimet.find((a) => a.avain === annettu);
-    if (!annettu || !avain) {
-      throw new HttpVirhe(401, 'Avain puuttuu tai on virheellinen');
-    }
-    return {
-      kayttajatunnus: avain.kayttajatunnus,
-      nimi: avain.nimi,
-      rooli: avain.rooli,
-    };
-  }
+  app.use(express.json());
 
-  async function reititä(req, res) {
-    const url = new URL(req.url, 'http://localhost');
-    const osat = url.pathname.split('/').filter(Boolean);
-    const [api, kohde, id] = osat;
-    const apiPolku = api === 'api' && osat.length <= 3;
-
-    if (apiPolku && kohde === 'tilat' && osat.length === 2 && req.method === 'GET') {
-      return laheta(res, 200, TILAT);
-    }
-
-    if (apiPolku && kohde === 'varaukset' && osat.length === 2) {
-      if (req.method === 'GET') {
-        const tila = url.searchParams.get('tila');
-        const kaikki = await tallennus.lue();
-        return laheta(res, 200, tila ? kaikki.filter((v) => v.tila === tila) : kaikki);
-      }
-      if (req.method === 'POST') {
-        const kayttaja = tunnista(req);
-        const runko = await lueJson(req);
-        // Nimi tulee avaimesta: rungossa tullut nimi ylikirjoitetaan.
-        const syote = { ...runko, nimi: kayttaja.nimi };
-        const virheet = validoiVaraus(syote, TILAT);
-        if (virheet.length) throw new HttpVirhe(400, 'Virheellinen varaus', { virheet });
-
-        const uusi = {
-          id: randomUUID(),
-          tila: syote.tila,
-          nimi: kayttaja.nimi,
-          omistaja: kayttaja.kayttajatunnus,
-          alku: new Date(syote.alku).toISOString(),
-          loppu: new Date(syote.loppu).toISOString(),
-        };
-        await tallennus.muuta((varaukset) => {
-          const osuvat = paallekkaiset(uusi, varaukset);
-          if (osuvat.length) {
-            throw new HttpVirhe(409, 'Tila on jo varattu valitulle ajalle', {
-              paallekkaiset: osuvat.map((v) => v.id),
-            });
-          }
-          return { data: [...varaukset, uusi], vastaus: uusi };
-        });
-        return laheta(res, 201, uusi);
-      }
-    }
-
-    if (apiPolku && kohde === 'varaukset' && osat.length === 3 && req.method === 'DELETE') {
-      const kayttaja = tunnista(req);
-      await tallennus.muuta((varaukset) => {
-        const varaus = varaukset.find((v) => v.id === id);
-        if (!varaus) throw new HttpVirhe(404, 'Varausta ei löydy');
-
-        const saaPoistaa =
-          kayttaja.rooli === 'yllapitaja' || varaus.omistaja === kayttaja.kayttajatunnus;
-        if (!saaPoistaa) {
-          throw new HttpVirhe(403, 'Voit poistaa vain omia varauksiasi');
-        }
-        return { data: varaukset.filter((v) => v.id !== id) };
-      });
-      return laheta(res, 204);
-    }
-
-    throw new HttpVirhe(404, 'Osoitetta ei löydy');
-  }
-
-  // Yksi virheenkäsittelijä kaikille reiteille.
-  function kasittelijaVirheelle(res, e) {
-    if (e instanceof HttpVirhe) {
-      return laheta(res, e.tila, { virhe: e.message, ...e.lisatiedot });
-    }
-    console.error(e);
-    return laheta(res, 500, { virhe: 'Palvelinvirhe' });
-  }
-
-  return http.createServer((req, res) => {
-    reititä(req, res).catch((e) => kasittelijaVirheelle(res, e));
+  app.get('/api/tilat', async (req, res) => {
+    const { tilat } = await tallennus.lue();
+    res.json(tilat);
   });
+
+  /* ?tila=A101 ja ?paiva=2026-10-20 rajaavat; molemmat valinnaisia. */
+  app.get('/api/varaukset', async (req, res) => {
+    const { varaukset } = await tallennus.lue();
+    const { tila, paiva } = req.query;
+
+    const tulos = varaukset
+      .filter((v) => !tila || v.tila === tila)
+      .filter((v) => !paiva || v.alku.startsWith(paiva))
+      .sort((a, b) => a.alku.localeCompare(b.alku));
+
+    res.json(tulos);
+  });
+
+  app.post('/api/varaukset', async (req, res) => {
+    const uusi = await tallennus.muuta((data) => {
+      const tila = data.tilat.find((t) => t.id === req.body?.tila);
+      if (!tila) {
+        throw new HttpVirhe(404, 'Tilaa ei loydy.');
+      }
+
+      const virheet = validoiVaraus(req.body, tila);
+      if (virheet.length > 0) {
+        throw new HttpVirhe(400, 'Varaus ei kelpaa.', { virheet });
+      }
+
+      const varaus = {
+        id: randomUUID(),
+        tila: tila.id,
+        alku: req.body.alku,
+        loppu: req.body.loppu,
+        varaaja: req.body.varaaja.trim(),
+        aihe: typeof req.body.aihe === 'string' ? req.body.aihe.trim() : '',
+      };
+
+      const esteet = paallekkaiset(varaus, data.varaukset);
+      if (esteet.length > 0) {
+        throw new HttpVirhe(409, 'Tila on jo varattu tuolle ajalle.', { paallekkain: esteet });
+      }
+
+      data.varaukset.push(varaus);
+      return varaus;
+    });
+
+    res.status(201).json(uusi);
+  });
+
+  app.delete('/api/varaukset/:id', async (req, res) => {
+    await tallennus.muuta((data) => {
+      const sijainti = data.varaukset.findIndex((v) => v.id === req.params.id);
+      if (sijainti === -1) {
+        throw new HttpVirhe(404, 'Varausta ei loydy.');
+      }
+      data.varaukset.splice(sijainti, 1);
+    });
+
+    res.status(204).end();
+  });
+
+  /* Tuntematon osoite: JSON-vastaus eika Expressin HTML-sivu. */
+  app.use((req, res) => {
+    res.status(404).json({ virhe: 'Osoitetta ei loydy.' });
+  });
+
+  /* Kaikki virheet yhdessa paikassa. Express 5 ohjaa myos async-kasittelijoiden
+     virheet tanne, joten try/catchia ei tarvita reiteissa. */
+  // eslint-disable-next-line no-unused-vars
+  app.use((virhe, req, res, next) => {
+    if (virhe instanceof HttpVirhe) {
+      return res.status(virhe.tila).json({ virhe: virhe.message, ...virhe.lisat });
+    }
+    if (virhe.type === 'entity.parse.failed') {
+      return res.status(400).json({ virhe: 'Pyynnon JSON on viallinen.' });
+    }
+    console.error(virhe);
+    res.status(500).json({ virhe: 'Palvelimella tapahtui virhe.' });
+  });
+
+  return app;
 }
