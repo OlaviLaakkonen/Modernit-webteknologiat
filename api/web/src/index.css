@@ -4,6 +4,20 @@
   background: #f4f6f9;
 }
 
+.lomake {
+  display: grid;
+  gap: 8px;
+  max-width: 320px;
+  margin-top: 24px;
+}
+
+.lomake label {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 main {
   max-width: 640px;
   margin: 40px auto;

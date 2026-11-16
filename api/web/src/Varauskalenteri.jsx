@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { haeTilat, haeVaraukset, poistaVaraus } from './api.js';
+import Varauslomake from './Varauslomake.jsx';
 
 /** Paikallinen paivamaara muodossa YYYY-MM-DD. */
 function tanaan() {
@@ -89,6 +90,7 @@ async function poista(id) {
           ))}
         </ul>
       )}
+    <Varauslomake tila={tila} paiva={paiva} onLuotu={() => asetaPaivitys((n) => n + 1)} />
     </section>
   );
 }

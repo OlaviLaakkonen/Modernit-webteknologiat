@@ -45,6 +45,14 @@
       "loppu": "2026-10-21T15:00",
       "varaaja": "Opintotoimisto",
       "aihe": "Infotilaisuus"
+    },
+    {
+      "id": "1af58b2e-b409-4353-ac63-80af446463ee",
+      "tila": "A101",
+      "alku": "2026-11-16T10:00",
+      "loppu": "2026-11-16T11:00",
+      "varaaja": "Maija",
+      "aihe": "Ryhmätyö"
     }
   ]
 }
