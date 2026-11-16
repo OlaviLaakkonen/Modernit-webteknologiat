@@ -1,0 +1,14 @@
+{
+  "tilat": [
+    { "id": "A101", "nimi": "Luokka A101", "paikkoja": 30, "aukeaa": "08:00", "sulkeutuu": "16:00" },
+    { "id": "A102", "nimi": "Luokka A102", "paikkoja": 24, "aukeaa": "08:00", "sulkeutuu": "16:00" },
+    { "id": "B201", "nimi": "Neuvotteluhuone B201", "paikkoja": 8, "aukeaa": "07:00", "sulkeutuu": "18:00" },
+    { "id": "AULA", "nimi": "Auditorio", "paikkoja": 120, "aukeaa": "09:00", "sulkeutuu": "20:00" }
+  ],
+  "varaukset": [
+    { "id": "v1", "tila": "A101", "alku": "2026-10-20T08:15", "loppu": "2026-10-20T09:45", "varaaja": "Opettaja Aalto", "aihe": "Ohjelmointi" },
+    { "id": "v2", "tila": "A101", "alku": "2026-10-20T10:00", "loppu": "2026-10-20T11:30", "varaaja": "Opettaja Aalto", "aihe": "Tietokannat" },
+    { "id": "v3", "tila": "B201", "alku": "2026-10-20T12:00", "loppu": "2026-10-20T13:00", "varaaja": "Tiimi Kettu", "aihe": "Projektipalaveri" },
+    { "id": "v4", "tila": "AULA", "alku": "2026-10-21T13:00", "loppu": "2026-10-21T15:00", "varaaja": "Opintotoimisto", "aihe": "Infotilaisuus" }
+  ]
+}
